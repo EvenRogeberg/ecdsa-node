@@ -1,6 +1,5 @@
-const verify = require("./scripts/verify.js");
 const secp = require("ethereum-cryptography/secp256k1");
-const {toHex, utf8ToBytes} = require("ethereum-cryptography/utils");
+const { toHex, utf8ToBytes } = require("ethereum-cryptography/utils");
 const express = require("express");
 const app = express();
 const cors = require("cors");
@@ -39,13 +38,13 @@ app.get("/balance/:address", (req, res) => {
 
 app.post("/send", (req, res) => {
   const { tx, customJson, hashMsg } = req.body;
-  console.log("customJson :", customJson );
-  
+  // console.log("customJson :", customJson);
+
   setInitialBalance(tx.sender);
   setInitialBalance(tx.recipient);
-  console.log(' sender: ',tx.sender);
-  console.log('receiver: ', tx.recipient);
-  console.log('amount: ', tx.amount);
+  // console.log(' sender: ', tx.sender);
+  // console.log('receiver: ', tx.recipient);
+  // console.log('amount: ', tx.amount);
 
   const signature = JSON.parse(customJson, (key, value) => {
     if (key === 'r' || key === 's') {
@@ -54,31 +53,29 @@ app.post("/send", (req, res) => {
     return value;
   });
 
-  console.log("signature",signature)
 
   let sign = new secp.secp256k1.Signature(signature.r, signature.s)
   sign = sign.addRecoveryBit(signature.recovery)
   const pubKey = sign.recoverPublicKey(hashMsg);
-  console.log("pub", pubKey.toHex())
-  //console.log("pubKey ", pubKey);
+  // console.log("pub", pubKey.toHex())
+  // console.log("sender ", tx.sender)
 
-  //const isVerfied = secp.verify(signed, msgHash, pubKey);
-  //console.log("isVerfied ",isVerfied);
-  // if(customJson === undefined) {
-  //   console.log('ingen signedMsg');
-  //    res.status(400).send({ message: "invalid signature" });
-  //  }
-  // var senderIsSender = verify(customJson, tx.sender);
-   //console.log(senderIsSender);
-  //const publicKey = await recoverKey()
+  //verification if the recovered public key is the same as sender public key.
+  if (pubKey.toHex().toString() === tx.sender.toString() && tx.amount > 0) {
+    // console.log("its the same")
 
-  // if (balances[sender] < amount) {
-  //   res.status(400).send({ message: "Not enough funds!" });
-  // } else {
-  //   balances[sender] -= amount;
-  //   balances[recipient] += amount;
-  //   res.send({ balance: balances[sender] });
-  //}
+    if (balances[tx.sender] < parseInt(tx.amount)) {
+      res.status(400).send({ message: "Not enough funds!" });
+    } else {
+      balances[tx.sender] -= parseInt(tx.amount);
+      balances[tx.recipient] += parseInt(tx.amount);
+      res.send({ balance: balances[tx.sender] });
+    }
+  }
+  else {
+  //  console.log("not the same");
+    res.status(400).send({ message: "invalid signature or amount is not positive" });
+  }
 });
 
 app.listen(port, () => {

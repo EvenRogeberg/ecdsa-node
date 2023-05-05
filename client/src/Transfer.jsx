@@ -31,8 +31,6 @@ function Transfer({ address, setBalance, nonce, setNonce }) {
     const customJson = JSON.stringify(signed , (key, value) => {  
       return typeof value === 'bigint' ? value.toString() : value;  
   });  
-
-    console.log('ute av signed: ', customJson);
     
     try {
       const {
@@ -80,7 +78,6 @@ function Transfer({ address, setBalance, nonce, setNonce }) {
           hashMessage(JSON.stringify({
             recipient,
             amount: parseInt(sendAmount),
-          //  nonce: parseInt(nonce),
           }))
           }
         </span>
